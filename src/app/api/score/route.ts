@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server";
+import { RateLimitService } from "@/lib/rate-limit";
 
 /* ============================================
    SCORE API ROUTE
    Server-side validation for Digital DNA score
    ============================================ */
-
-// Rate limiting: track request timestamps per IP
-const requestLog = new Map<string, number[]>();
-
-const RATE_LIMIT_WINDOW = 60_000; // 1 minute
-const RATE_LIMIT_MAX = 10; // max 10 stamp additions per minute
 
 // Allowed stamp definitions (server-side source of truth)
 const VALID_STAMPS: Record<string, { maxXP: number; name: string }> = {
@@ -21,23 +16,6 @@ const VALID_STAMPS: Record<string, { maxXP: number; name: string }> = {
     linkedin: { maxXP: 15, name: "LinkedIn" },
     wallet: { maxXP: 25, name: "Wallet" },
 };
-
-function isRateLimited(ip: string): boolean {
-    const now = Date.now();
-    const timestamps = requestLog.get(ip) || [];
-
-    // Remove expired timestamps
-    const valid = timestamps.filter((t) => now - t < RATE_LIMIT_WINDOW);
-    requestLog.set(ip, valid);
-
-    if (valid.length >= RATE_LIMIT_MAX) {
-        return true;
-    }
-
-    valid.push(now);
-    requestLog.set(ip, valid);
-    return false;
-}
 
 /* GET — Return current score configuration */
 export async function GET() {
@@ -67,7 +45,7 @@ export async function POST(request: Request) {
             request.headers.get("x-real-ip") ||
             "unknown";
 
-        if (isRateLimited(ip)) {
+        if (await RateLimitService.isRateLimited(ip)) {
             return NextResponse.json(
                 {
                     error: "Rate limited",
