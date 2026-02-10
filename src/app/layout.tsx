@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { WalletProvider } from "./context/wallet-context";
 
 // Preload fonts for better performance
 const geistSans = Geist({
@@ -93,7 +94,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-oled text-white min-h-screen overflow-x-hidden`}
       >
-        {children}
+        <WalletProvider>
+            {children}
+        </WalletProvider>
       </body>
     </html>
   );
