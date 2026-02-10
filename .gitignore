@@ -36,6 +36,15 @@ yarn-error.log*
 # vercel
 .vercel
 
+# qoder configuration
+.qoder/skills/
+.qoder/agents/
+.qoder/projects/
+.qoder/workspaces/
+.qoder/config.json
+.qoder/history/
+.qoder/cache/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
