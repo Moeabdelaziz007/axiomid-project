@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, useAnimation } from "framer-motion";
+import { DNAProvider, useDNA, type DNALevel } from "./context/dna-context";
+import { DNAProgress } from "./components/dna-progress";
+import { useBehavior } from "./hooks/use-behavior";
 
 type BadgeLevel = "ghost" | "spark" | "pulse" | "axiom";
 
@@ -414,12 +417,26 @@ const integrations = [
    MAIN PAGE COMPONENT
    ============================================ */
 export default function Home() {
+  return (
+    <DNAProvider>
+      <HomeContent />
+    </DNAProvider>
+  );
+}
+
+function HomeContent() {
+  const { state, addStamp, hasStamp, updateBehaviorScore } = useDNA();
+  const behavior = useBehavior();
   const [stage, setStage] = useState<"intro" | "question" | "badge" | "prove">("intro");
   const [showButton, setShowButton] = useState(false);
   const [isGlitching, setIsGlitching] = useState(false);
-  const [badgeLevel, setBadgeLevel] = useState<BadgeLevel>("ghost");
-  const [totalXP, setTotalXP] = useState(0);
-  const [connectedIntegrations, setConnectedIntegrations] = useState<string[]>([]);
+
+  // Feed behavior score into DNA engine
+  useEffect(() => {
+    if (behavior.isReady) {
+      updateBehaviorScore(behavior.score);
+    }
+  }, [behavior.score, behavior.isReady, updateBehaviorScore]);
 
   useEffect(() => {
     const timer = setTimeout(() => setStage("question"), 2000);
@@ -435,17 +452,33 @@ export default function Home() {
     }, 300);
   };
 
-  const handleIntegrationClick = (integration: (typeof integrations)[0]) => {
-    if (connectedIntegrations.includes(integration.id)) return;
+  const handleIntegrationClick = async (integration: (typeof integrations)[0]) => {
+    if (hasStamp(integration.id)) return;
 
-    const newXP = totalXP + integration.xp;
-    setTotalXP(newXP);
-    setConnectedIntegrations([...connectedIntegrations, integration.id]);
+    // Validate with server API (includes rate limit + bot check)
+    try {
+      const res = await fetch("/api/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stampId: integration.id,
+          behaviorScore: behavior.score,
+        }),
+      });
 
-    // Update badge level based on XP
-    if (newXP >= 70) setBadgeLevel("axiom");
-    else if (newXP >= 30) setBadgeLevel("pulse");
-    else if (newXP >= 10) setBadgeLevel("spark");
+      if (!res.ok) {
+        const err = await res.json();
+        console.warn("[AxiomID] Stamp rejected:", err.message);
+        return;
+      }
+
+      // Server approved — add stamp to DNA
+      addStamp(integration.id, integration.name, integration.xp);
+    } catch (e) {
+      console.error("[AxiomID] API error:", e);
+      // Fallback: add stamp locally if API is unreachable
+      addStamp(integration.id, integration.name, integration.xp);
+    }
   };
 
   return (
@@ -539,19 +572,18 @@ export default function Home() {
           >
             {/* Mini AXI mascot next to badge */}
             <div className="flex items-center gap-6 mb-2">
-              <AxiMascot size="small" mood="excited" />
-              <Badge level={badgeLevel} size={140} />
+              <AxiMascot size="small" mood={state.level === "axiom" ? "excited" : state.level === "pulse" ? "happy" : "curious"} />
+              <Badge level={state.level} size={140} />
             </div>
 
-            {/* XP Counter */}
+            {/* DNA Progress Bar */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="mt-4 mb-6"
+              className="mt-4 mb-6 w-full max-w-md"
             >
-              <span className="text-3xl font-bold gradient-text">{totalXP}</span>
-              <span className="text-gray-500 text-lg ml-2">XP</span>
+              <DNAProgress />
             </motion.div>
 
             {stage === "prove" && (
@@ -582,7 +614,7 @@ export default function Home() {
                   transition={{ delay: 0.5 }}
                 >
                   {integrations.map((integration, index) => {
-                    const isConnected = connectedIntegrations.includes(integration.id);
+                    const isConnected = hasStamp(integration.id);
                     return (
                       <motion.div
                         key={integration.id}
@@ -609,22 +641,18 @@ export default function Home() {
                   })}
                 </motion.div>
 
-                {/* Level indicator */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1.2 }}
-                  className="mt-8 text-center"
-                >
-                  <p className="text-gray-500 text-sm">
-                    Current Level: <span className="text-white font-medium capitalize">{badgeLevel}</span>
-                    {badgeLevel !== "axiom" && (
-                      <span className="text-gray-600 ml-2">
-                        • {badgeLevel === "ghost" ? "10" : badgeLevel === "spark" ? "30" : "70"} XP to next level
-                      </span>
-                    )}
-                  </p>
-                </motion.div>
+                {/* Behavior score indicator (dev mode) */}
+                {behavior.isReady && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 0.4 }}
+                    className="mt-6 text-center"
+                  >
+                    <p className="text-gray-700 text-[10px] font-mono">
+                      🛡️ Guardian: behavior={behavior.score}/100 • {behavior.score > 40 ? "✓ Human" : "⚠ Bot?"}
+                    </p>
+                  </motion.div>
+                )}
               </motion.div>
             )}
           </motion.div>
