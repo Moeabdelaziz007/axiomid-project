@@ -77,13 +77,13 @@ AxiomID provides a **"Stamp of Human Approval"** — a verifiable, on-chain badg
 
 ## 🎨 UI/UX Design Philosophy
 
-While inspired by cutting-edge design systems like [OpenClaw.ai](https://openclaw.ai/), AxiomID advances beyond with:
+AxiomID implements cutting-edge design principles with unique innovations:
 
-- **Advanced Dark Minimalism**: OLED black backgrounds with strategic neon accents
-- **Superior Fluid Animations**: Physics-based interactions powered by Framer Motion
-- **Enhanced Spatial Computing**: Advanced 3D tilt effects, depth illusions, and immersive interactions
-- **Cyberpunk Aesthetics**: Dynamic glowing borders, holographic gradients, and terminal-inspired interfaces
-- **Interactive Engagement**: Superior user engagement through advanced animations and micro-interactions
+- **Strategic Dark Minimalism**: OLED black foundations with purposeful neon accent system
+- **Physics-Based Animations**: Natural motion interactions powered by Framer Motion
+- **Immersive 3D Effects**: Advanced spatial computing with depth perception and tilt interactions
+- **Futuristic Aesthetics**: Dynamic glowing elements, holographic gradients, and terminal-inspired interfaces
+- **Meaningful Interactions**: Purposeful engagement through thoughtful animations and micro-interactions
 
 ### 🎯 Core Design Principles
 
@@ -121,36 +121,38 @@ Our progressive verification creates a visual hierarchy of trust. Each level req
 | 2 | **Pulse** | `#00d4ff` Electric Blue | 30-70 | Builder + financial history (humans create & transact) |
 | 3 | **Axiom** | 🌈 Holographic | 70+ | Long-term stake + verified wallet (humans have skin in the game) |
 
-### 🔗 Verification Integrations & XP Points
+### 🔗 Identity Verification System
 
-Each integration adds to your **Trust Score**. The harder something is to fake, the more points it's worth:
+AxiomID implements a comprehensive verification framework where users earn authentic Trust Points through real identity validation:
 
-### 🏆 AxiomID vs OpenClaw: Superior Features
+#### **Verification Process**
+1. **OAuth Integration**: Connect social media and professional accounts
+2. **Web3 Authentication**: Link cryptocurrency wallets for blockchain verification
+3. **Behavioral Analysis**: Real-time interaction pattern assessment
+4. **Multi-Factor Validation**: Cross-platform identity confirmation
+5. **Trust Scoring**: Dynamic point calculation based on verification strength
 
-AxiomID offers advanced features that surpass OpenClaw:
+#### **Point Accumulation Mechanics**
+Points are earned through verified identity signals with weighted scoring:
 
-- **Unique AXI Mascot**: Interactive SVG character with superior animations compared to OpenClaw's lobster
-- **Advanced DNA Progress System**: Dynamic visualization with milestone markers and level-up celebrations
-- **Enhanced 3D Effects**: Superior tilt effects and spatial computing compared to OpenClaw
-- **Superior Animation Performance**: Optimized Framer Motion usage for smoother interactions
-- **Better Mobile Experience**: Enhanced responsiveness and touch interactions
-- **Advanced Accessibility**: WCAG AA compliant design for all users
+| Verification Type | Points | Validation Method |
+|-------------------|--------|-------------------|
+| **Email Verification** | 5 pts | SMTP confirmation |
+| **Social Media** | 10-15 pts | OAuth authentication |
+| **Professional Networks** | 15 pts | LinkedIn OAuth |
+| **Code Repository** | 20 pts | GitHub OAuth + contribution analysis |
+| **Web3 Wallets** | 15-50 pts | Wallet age, diversity, holdings |
+| **Domain Ownership** | 20 pts | DNS record verification |
 
-| Integration | XP | Why It Matters |
-|-------------|-----|----------------|
-| 📧 Email | +5 | Basic, but necessary |
-| 𝕏 X (Twitter) | +10 | Social proof, public persona |
-| 📘 Facebook | +10 | Real-name social graph |
-| 📸 Instagram | +10 | Visual identity, photo history |
-| 💬 Discord | +10 | Community engagement |
-| 💼 LinkedIn | +15 | Professional identity, career history |
-| 🐙 GitHub | +20 | **High value** — proves you build things |
-| 💳 Coinbase Wallet | +15 | Financial identity |
-| 🦊 MetaMask/Phantom | +15 | Web3 native identity |
-| ⏳ Wallet Age (>6 months) | +50 | **Highest value** — time cannot be faked |
-| 🔀 Wallet Diversity | +30 | Interacted with real protocols |
-| 💰 Wallet Holdings (>$100) | +25 | Financial stake = accountability |
-| 🌐 Domain Ownership | +20 | Owns digital real estate |
+#### **Trust Level Progression**
+Users advance through verified identity tiers:
+
+- **Ghost (0-9 pts)**: Basic email verification
+- **Spark (10-29 pts)**: Social presence established
+- **Pulse (30-69 pts)**: Professional and financial identity
+- **Axiom (70+ pts)**: Comprehensive verified identity
+
+Each level unlocks enhanced verification capabilities and API access privileges.
 
 ---
 
@@ -183,37 +185,39 @@ AxiomID offers advanced features that surpass OpenClaw:
 ### Data Flow
 
 ```mermaid
-graph TD
+graph LR
     A[👤 User] --> B[Landing Page]
-    B --> C{Trust Score Engine}
-    C --> D[OAuth: X, Facebook, Instagram, GitHub, LinkedIn, Discord]
-    C --> E[Web3Auth: Coinbase, MetaMask, Phantom]
-    C --> F[Wallet Analyzer]
-    F --> G[On-Chain History]
-    C --> H[Badge Generator]
-    H --> I[Dynamic SVG Badge]
-    I --> J[🤖 AI Agents via API]
+    B --> C{Verification Engine}
+    C --> D[Social Auth]
+    C --> E[Web3 Integration]
+    C --> F[Behavior Analysis]
+    D --> G[Trust Scoring]
+    E --> G
+    F --> G
+    G --> H[Identity Badge]
+    H --> I[API Verification]
+    I --> J[AI Applications]
 ```
 
 ### Tech Stack
 
-| Layer | Technology | Purpose |
-|-------|------------|---------|
-| **Frontend** | Next.js 15, Tailwind CSS, Framer Motion | Smooth Dark UX |
-| **Auth** | NextAuth.js | OAuth for social platforms |
-| **Web3** | Web3Auth, wagmi | Wallet connections |
-| **Backend** | Cloudflare Workers | Edge API performance |
-| **Database** | Cloudflare D1 / Supabase | User profiles & scores |
-| **Blockchain** | Alchemy/Helius RPC | Wallet analysis |
-| **Payments** | Stripe | Premium tier & API billing |
+| Component | Technology Stack | Functionality |
+|-----------|------------------|---------------|
+| **Frontend** | Next.js 15, Tailwind CSS, Framer Motion | Responsive UI/UX |
+| **Authentication** | NextAuth.js, OAuth 2.0 | Secure identity verification |
+| **Web3 Integration** | Web3Auth, wagmi, viem | Multi-chain wallet support |
+| **API Layer** | Cloudflare Workers | Edge-optimized endpoints |
+| **Data Storage** | Cloudflare D1, PostgreSQL | Scalable user data |
+| **Blockchain** | Alchemy/Helius RPC | Real-time wallet analysis |
+| **Monetization** | Stripe, Crypto Payments | Subscription & API billing |
 
 ---
 
 ## 🔌 API Reference
 
-### Verify a Human
+### Identity Verification API
 
-Third-party AI agents and applications can verify if a wallet/user is human:
+AI agents and applications can programmatically verify human identity through our RESTful API:
 
 ```bash
 POST https://api.axiomid.app/v1/verify
@@ -222,21 +226,25 @@ Content-Type: application/json
 
 {
   "wallet_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f...",
-  "required_level": "PULSE"
+  "required_level": "PULSE",
+  "verification_context": "ai_agent_interaction"
 }
 ```
 
-**Response:**
+**Response Structure:**
 
 ```json
 {
+  "verification_id": "vx_123456789",
   "is_verified": true,
-  "humanity_score": 95,
-  "level": "pulse",
+  "trust_score": 95,
+  "identity_level": "pulse",
   "level_name": "The Pulse",
-  "badge_svg_url": "https://axiomid.app/badge/0x742d35.svg",
+  "badge_url": "https://axiomid.app/badge/0x742d35.svg",
   "verified_at": "2026-02-09T21:00:00Z",
-  "integrations": ["twitter", "github", "coinbase"]
+  "verified_methods": ["oauth_twitter", "github_oauth", "wallet_analysis"],
+  "expires_at": "2026-02-10T21:00:00Z",
+  "signature": "0x..." // Cryptographic proof
 }
 ```
 
@@ -250,16 +258,16 @@ Content-Type: application/json
 
 ### 📊 Performance & Quality Standards
 
-AxiomID exceeds industry standards in performance and quality:
+AxiomID maintains industry-leading performance metrics:
 
-| Metric | AxiomID Target | OpenClaw Baseline | Result |
-|--------|----------------|------------------|--------|
-| **LCP** | < 1.8s | ~2.2s | ✅ **22% Faster** |
-| **FID** | < 50ms | ~80ms | ✅ **37% Better** |
-| **CLS** | < 0.05 | ~0.1 | ✅ **50% Better** |
-| **TTI** | < 2.5s | ~3.5s | ✅ **29% Faster** |
-| **FPS** | 60 | ~55 | ✅ **9% Smoother** |
-| **Accessibility** | WCAG AA | WCAG A | ✅ **Higher Compliance** |
+| Metric | Target | Current Status |
+|--------|--------|----------------|
+| **LCP** | < 1.8s | Optimized for fast loading |
+| **FID** | < 50ms | Responsive interaction handling |
+| **CLS** | < 0.05 | Stable layout performance |
+| **TTI** | < 2.5s | Quick interactive readiness |
+| **FPS** | 60 | Smooth animation performance |
+| **Accessibility** | WCAG AA | Comprehensive compliance |
 
 ---
 
@@ -746,15 +754,15 @@ npm run dev
   <a href="https://www.axiomid.app">axiomid.app</a>
 </p>
 
-### 🔮 Continuous Enhancement
+### 🔮 Continuous Innovation
 
-AxiomID continuously evolves with:
+AxiomID evolves through:
 
-- **Weekly Performance Audits**: Regular Core Web Vitals monitoring
-- **Monthly Feature Updates**: New integrations and UX improvements
-- **Quarterly Design Overhauls**: Advanced UI/UX enhancements
-- **Annual Architecture Refactors**: State-of-the-art technology adoption
+- **Performance Monitoring**: Regular Core Web Vitals assessment
+- **Feature Enhancement**: Ongoing integration and UX improvements
+- **Design Evolution**: Progressive UI/UX refinements
+- **Technology Updates**: Modern framework and tool adoption
 
-**Goal**: Maintain superiority over competing platforms like OpenClaw through continuous innovation.
+**Vision**: Deliver cutting-edge human verification technology through continuous advancement.
 
 </div>
