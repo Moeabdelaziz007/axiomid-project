@@ -39,6 +39,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@prisma/client": "^6.0.0",
     "@web3auth/base": "^9.7.0",
     "@web3auth/modal": "^10.14.0",
     "framer-motion": "^12.34.0",
@@ -54,6 +55,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "prisma": "^6.0.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
