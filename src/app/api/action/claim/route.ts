@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { calculateTier } from '@/lib/tiers';
-import { ACTIONS } from '@/lib/actions';
+import { ACTION_MAP } from '@/lib/actions';
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
     }
 
-    const actionDef = Object.values(ACTIONS).find(a => a.id === actionType);
+    const actionDef = ACTION_MAP.get(actionType);
 
     if (!actionDef) {
       return NextResponse.json({ error: 'Invalid action type' }, { status: 400 });
