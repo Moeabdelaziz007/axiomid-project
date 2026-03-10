@@ -10,6 +10,22 @@ const requestLog = new Map<string, number[]>();
 
 const RATE_LIMIT_WINDOW = 60_000; // 1 minute
 const RATE_LIMIT_MAX = 10; // max 10 stamp additions per minute
+const CLEANUP_INTERVAL = 300_000; // 5 minutes
+
+// Periodic cleanup to prevent memory leak
+if (typeof setInterval !== "undefined") {
+    setInterval(() => {
+        const now = Date.now();
+        for (const [ip, timestamps] of requestLog.entries()) {
+            const valid = timestamps.filter((t) => now - t < RATE_LIMIT_WINDOW);
+            if (valid.length === 0) {
+                requestLog.delete(ip);
+            } else if (valid.length !== timestamps.length) {
+                requestLog.set(ip, valid);
+            }
+        }
+    }, CLEANUP_INTERVAL);
+}
 
 // Allowed stamp definitions (server-side source of truth)
 const VALID_STAMPS: Record<string, { maxXP: number; name: string }> = {
