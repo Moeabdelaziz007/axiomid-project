@@ -98,7 +98,7 @@ function ActionRow({
   claimed,
   loading
 }: {
-  action: typeof ACTIONS[keyof typeof ACTIONS],
+  action: (typeof ACTIONS)[keyof typeof ACTIONS],
   onClaim: () => void,
   claimed: boolean,
   loading: boolean

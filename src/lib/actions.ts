@@ -4,4 +4,10 @@ export const ACTIONS = {
   VERIFY_IDENTITY: { id: 'verify_identity', xp: 100 }, // Simulated
   PROOF_OF_WORK_DAILY: { id: 'daily_pow', xp: 20 },
   WALLET_ACTIVITY: { id: 'wallet_age', xp: 300 }, // Simulated based on wallet age
-};
+} as const;
+
+export type ActionType = typeof ACTIONS[keyof typeof ACTIONS]['id'];
+
+export const ACTION_MAP = new Map(
+  Object.values(ACTIONS).map(action => [action.id, action])
+);
