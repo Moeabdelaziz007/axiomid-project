@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
@@ -7,6 +6,16 @@ import { Tier, getLevelProgress, getNextLevelXP } from "@/lib/tiers";
 /* ============================================
    TYPES
    ============================================ */
+interface EthereumProvider {
+  request: (args: { method: string; params?: unknown[] }) => Promise<string[]>;
+}
+
+declare global {
+  interface Window {
+    ethereum?: EthereumProvider;
+  }
+}
+
 export interface User {
   id: string;
   walletAddress: string;
@@ -50,15 +59,15 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
     try {
       // Check for Ethereum provider
-      if (typeof window !== "undefined" && (window as any).ethereum) {
+      if (typeof window !== "undefined" && window.ethereum) {
         try {
-          const accounts = await (window as any).ethereum.request({ method: "eth_requestAccounts" });
+          const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
           if (accounts && accounts.length > 0) {
               walletAddress = accounts[0];
           } else {
               throw new Error("No accounts found");
           }
-        } catch (err: any) {
+        } catch (err: unknown) {
            console.warn("User rejected request:", err);
            throw new Error("Connection rejected");
         }
@@ -84,9 +93,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       // Persist locally
       localStorage.setItem("axiomid_wallet", walletAddress);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || "Failed to connect wallet");
+      const errorMessage = err instanceof Error ? err.message : "Failed to connect wallet";
+      setError(errorMessage);
     } finally {
       setIsConnecting(false);
     }
