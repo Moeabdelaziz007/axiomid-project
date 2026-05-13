@@ -1,168 +1,103 @@
-# Domain Configuration Guide for AxiomID
+# Deploying axiomid.app
 
-## Overview
+This document is the source of truth for how the L0 authority surface
+(`axiomid.app`) is built, deployed, and configured. It supersedes any
+older guide checked into the repo.
 
-This guide provides step-by-step instructions for configuring the axiomid.app domain with Vercel deployment and ensuring proper DNS setup.
+## Architecture in one paragraph
 
-## Current Configuration Status
+The site is a Next.js 16 (App Router) application that ships as a Vercel
+project. Pi Network is wired in two ways: the `public/validation-key.txt`
+hash proves we control `axiomid.app` to the Pi Developer Portal (it is
+public, not a secret), and `PI_API_KEY` / `PI_WALLET_PRIVATE_SEED` are
+server-only env vars consumed via `src/lib/pi/env.ts` for any server-side
+Pi Platform API call. There are two CI workflows on Blacksmith runners:
+`ci` runs type-check, lint and tests on every PR; `deploy` runs a Vercel
+preview on every PR and a Vercel production deploy on every push to
+`main`.
 
-✅ **Package.json**: Updated with proper metadata and deployment scripts
-✅ **Vercel.json**: Created with security headers and domain alias
-✅ **Layout.tsx**: Enhanced with SEO metadata and proper structure
-✅ **README.md**: Updated with professional documentation and founder attribution
+## One-time Vercel setup
 
-## Domain Setup Instructions
+1. Sign in at https://vercel.com with the GitHub account that owns this
+   repository.
+2. Create a new Vercel project from the repo. Accept the defaults; the
+   build command and output directory in `vercel.json` already match.
+3. In the project settings, attach the custom domain `axiomid.app`
+   (apex) and `www.axiomid.app`. Vercel will print the DNS records to
+   add at your registrar:
+   - `A @ 76.76.21.21`
+   - `CNAME www cname.vercel-dns.com`
+   Vercel auto-provisions the TLS certificate once the records resolve.
+4. In the project settings, open **Environment Variables** and add the
+   keys listed in `.env.example` for the `Production` and `Preview`
+   environments. The Pi values (`PI_API_KEY`, optional
+   `PI_WALLET_PRIVATE_SEED`) come from the Pi Developer Portal.
 
-### 1. Vercel Project Configuration
+## One-time GitHub setup
 
-The project is configured to deploy to `axiomid.app` with the following settings:
+The deploy workflow expects three repository secrets. Add them under
+**Settings -> Secrets and variables -> Actions**:
 
-```json
-{
-  "alias": ["axiomid.app"],
-  "regions": ["iad1", "sfo1", "pdx1"],
-  "public": true
-}
-```
+| Secret              | Where to find it                                                 |
+| ------------------- | ---------------------------------------------------------------- |
+| `VERCEL_TOKEN`      | https://vercel.com/account/tokens                                |
+| `VERCEL_ORG_ID`     | `vercel.com/<org>/settings` or `.vercel/project.json` after link |
+| `VERCEL_PROJECT_ID` | Project settings page, or `.vercel/project.json` after link      |
 
-### 2. DNS Configuration Required
-
-To point axiomid.app to your Vercel deployment, configure these DNS records:
-
-#### A Records (for apex domain):
-```
-@ → 76.76.21.21
-@ → 99.86.54.54
-@ → 143.244.172.10
-@ → 23.235.39.123
-```
-
-#### CNAME Record (for www subdomain):
-```
-www → cname.vercel-dns.com
-```
-
-### 3. SSL Certificate
-
-Vercel automatically provisions SSL certificates for custom domains. Once DNS is configured correctly, the certificate will be issued within 24 hours.
-
-### 4. Environment Variables
-
-Set these environment variables in your Vercel project settings:
+To grab the IDs locally:
 
 ```bash
-NEXT_PUBLIC_SITE_URL=https://axiomid.app
-NEXTAUTH_URL=https://axiomid.app
-NEXTAUTH_SECRET=your-secret-key-here
+npx vercel link    # interactive; writes .vercel/project.json
+cat .vercel/project.json
 ```
 
-## Deployment Commands
+`.vercel/` is gitignored, so the file stays off the repo.
 
-### Development
+## Pi Network domain claim
+
+The Pi Developer Portal issues a hash that proves you control the
+domain. That hash is committed to `public/validation-key.txt` and is
+served at `https://axiomid.app/validation-key.txt`. The `vercel.json`
+header rules force `Content-Type: text/plain` on that path so Pi's
+validator does not see HTML. If you ever rotate the hash, replace the
+contents of that file and redeploy; the URL must stay the same.
+
+## Pi keys (runtime)
+
+`PI_API_KEY` and `PI_WALLET_PRIVATE_SEED` are read exclusively via
+`getPiEnv()` in `src/lib/pi/env.ts`. That module imports `server-only`,
+which makes the build fail if a client component ever pulls it in.
+`getPiEnv()` throws at boot if `PI_API_KEY` is missing, so a
+misconfigured Vercel environment surfaces the problem immediately.
+
+## Local development
+
 ```bash
+cp .env.example .env.local
+# fill in NEXTAUTH_SECRET, DATABASE_URL, PI_API_KEY (sandbox key is fine)
+npm ci
 npm run dev
-# Runs on http://localhost:3000
 ```
 
-### Production Deployment
+Set `NEXT_PUBLIC_PI_SANDBOX=true` for any non-production environment.
+
+## Deploy commands (manual override)
+
+CI handles deploys automatically, but you can also push from a
+workstation:
+
 ```bash
-npm run build
-npm run deploy
-# Deploys to Vercel with production settings
+npm run deploy:preview   # vercel
+npm run deploy           # vercel --prod
 ```
 
-### Preview Deployment
-```bash
-npm run deploy:preview
-# Creates a preview deployment for testing
-```
+Both commands require `VERCEL_TOKEN` to be exported locally.
 
-## Monitoring and Analytics
+## Troubleshooting
 
-### Performance Monitoring
-- Vercel Analytics for Core Web Vitals
-- Custom performance metrics tracking
-- Error monitoring with Sentry integration
-
-### Domain Health Checks
-- SSL certificate expiration monitoring
-- DNS propagation verification
-- Uptime monitoring
-
-## Security Configuration
-
-The `vercel.json` includes these security headers:
-
-```json
-{
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        },
-        {
-          "key": "Strict-Transport-Security",
-          "value": "max-age=63072000; includeSubDomains; preload"
-        }
-      ]
-    }
-  ]
-}
-```
-
-## Troubleshooting Common Issues
-
-### DNS Not Propagating
-1. Verify DNS records with `dig axiomid.app`
-2. Wait 24-48 hours for full propagation
-3. Check Vercel domain settings in dashboard
-
-### SSL Certificate Issues
-1. Ensure DNS is pointing to Vercel
-2. Check domain verification in Vercel dashboard
-3. Force reissue certificate through Vercel UI
-
-### Deployment Failures
-1. Check build logs in Vercel dashboard
-2. Verify all environment variables are set
-3. Ensure package.json scripts are correct
-
-## Backup and Recovery
-
-### Git Backup Strategy
-- Main repository: GitHub (primary)
-- Automated backups: Daily snapshots
-- Branch protection: Enabled for main branch
-
-### Disaster Recovery Plan
-1. Restore from latest backup
-2. Reconfigure environment variables
-3. Update DNS records if needed
-4. Monitor deployment health
-
-## Future Enhancements
-
-### Planned Improvements
-- Multi-region deployment expansion
-- Advanced caching strategies
-- CDN optimization
-- Performance monitoring dashboard
-
-### Scalability Considerations
-- Auto-scaling configuration
-- Database connection pooling
-- API rate limiting
-- Load testing procedures
-
-This configuration ensures AxiomID will be properly deployed and accessible at axiomid.app with enterprise-grade security and performance optimizations.
+If the Pi Developer Portal cannot validate the domain, fetch
+`https://axiomid.app/validation-key.txt` with `curl -I` and confirm the
+status is `200` and the content-type is `text/plain`. A `308` means
+something in `vercel.json` is redirecting the path; do not reintroduce
+the legacy `routes` block or the apex-domain self-redirect that broke
+this URL in earlier revisions.
