@@ -138,7 +138,9 @@ Open [http://localhost:3000](http://localhost:3000). Click **"INITIALIZE SEQUENC
 
 ## 📄 License
 
-MIT License © 2026 Mohamed Abdelaziz
+Proprietary — All Rights Reserved © 2026 Mohamed Abdelaziz.
+
+See [`LICENSE`](./LICENSE) for full terms. This repository is private (`package.json` declares `private: true`); the source, documentation, and configuration may not be copied, redistributed, sublicensed, or used to train any model without prior written permission.
 
 ---
 
