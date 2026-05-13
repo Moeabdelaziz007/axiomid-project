@@ -35,8 +35,8 @@ export interface PiEnv {
 let cached: PiEnv | null = null;
 
 function readRequired(name: string): string {
-  const value = process.env[name];
-  if (!value || value.length === 0) {
+  const value = process.env[name]?.trim();
+  if (!value) {
     throw new Error(
       `[axiomid:pi] Missing required environment variable: ${name}. ` +
         `Set it locally in .env.local or in the Vercel project settings.`,
@@ -46,7 +46,8 @@ function readRequired(name: string): string {
 }
 
 function readOptional(name: string, fallback = ""): string {
-  return process.env[name] ?? fallback;
+  const raw = process.env[name];
+  return raw == null ? fallback : raw.trim();
 }
 
 /**

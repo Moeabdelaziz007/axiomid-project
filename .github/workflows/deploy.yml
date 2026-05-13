@@ -2,7 +2,7 @@ name: deploy
 
 # Deploys the L0 (axiomid.app) authority surface to Vercel.
 #
-# Preview deployments run on every push to a feature branch and on PRs.
+# Preview deployments run on every pull request targeting `main`.
 # Production deployments only run when commits land on `main` so axiomid.app
 # is never updated from an unreviewed branch.
 #
@@ -52,7 +52,7 @@ jobs:
   preview:
     name: deploy preview
     needs: preflight
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref != 'refs/heads/main')
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - name: Checkout

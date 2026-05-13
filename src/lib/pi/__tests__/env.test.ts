@@ -130,4 +130,21 @@ describe("getPiEnv", () => {
     expect(typeof env.sandbox).toBe("boolean");
     expect(env.sandbox).toBe(true);
   });
+
+  it("trims surrounding whitespace from env values", () => {
+    process.env.PI_API_KEY = "  trimmed-key  \n";
+    process.env.PI_WALLET_PRIVATE_SEED = "  SEED  ";
+    process.env.NEXT_PUBLIC_SITE_URL = "  https://axiomid.app  ";
+
+    const env = getPiEnv();
+
+    expect(env.apiKey).toBe("trimmed-key");
+    expect(env.walletPrivateSeed).toBe("SEED");
+    expect(env.siteUrl).toBe("https://axiomid.app");
+  });
+
+  it("treats whitespace-only PI_API_KEY as missing", () => {
+    process.env.PI_API_KEY = "   ";
+    expect(() => getPiEnv()).toThrow(/PI_API_KEY/);
+  });
 });
