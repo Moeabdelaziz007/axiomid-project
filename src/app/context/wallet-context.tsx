@@ -52,7 +52,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       // Check for Ethereum provider
       if (typeof window !== "undefined" && window.ethereum) {
         try {
-          const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+          const accounts = await window.ethereum.request({ method: "eth_requestAccounts" }) as string[];
           if (accounts && accounts.length > 0) {
               walletAddress = accounts[0];
           } else {
