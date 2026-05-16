@@ -1,12 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { Tier, getLevelProgress, getNextLevelXP } from "@/lib/tiers";
 
-/* ============================================
-   TYPES
-   ============================================ */
 export interface User {
   id: string;
   walletAddress: string;
@@ -20,6 +16,7 @@ interface WalletContextType {
   isLoading: boolean;
   isConnecting: boolean;
   error: string | null;
+  isPiBrowser: boolean;
   connectWallet: () => Promise<void>;
   claimAction: (actionType: string) => Promise<boolean>;
   refreshUser: () => Promise<void>;
@@ -29,70 +26,65 @@ interface WalletContextType {
 
 const WalletContext = createContext<WalletContextType | null>(null);
 
-/* ============================================
-   PROVIDER
-   ============================================ */
+const SANDBOX = process.env.NEXT_PUBLIC_PI_SANDBOX === "true";
+
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Initial load
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Computed values
   const levelProgress = user ? getLevelProgress(user.xp, user.tier) : 0;
   const nextXP = user ? getNextLevelXP(user.tier) : null;
 
-  // Connect Wallet
+  const [isPiBrowser, setIsPiBrowser] = useState(false);
+
+  useEffect(() => {
+    setIsPiBrowser(typeof window !== "undefined" && !!window.Pi);
+  }, []);
+
   const connectWallet = useCallback(async () => {
     setIsConnecting(true);
     setError(null);
-    let walletAddress = "";
 
     try {
-      // Check for Ethereum provider
-      if (typeof window !== "undefined" && window.ethereum) {
-        try {
-          const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-          if (accounts && accounts.length > 0) {
-              walletAddress = accounts[0];
-          } else {
-              throw new Error("No accounts found");
-          }
-        } catch (err: unknown) {
-           console.warn("User rejected request:", err);
-           throw new Error("Connection rejected");
-        }
+      let walletAddress = "";
+      let piUid = "";
+      let piUsername = "";
+
+      if (isPiBrowser && window.Pi) {
+        window.Pi.init({ version: "2.0", sandbox: SANDBOX });
+        const auth = await window.Pi.authenticate(["username", "payments"], (payment) => {
+          console.warn("Incomplete payment:", payment);
+        });
+        piUid = auth.user.uid;
+        piUsername = auth.user.username;
+        walletAddress = `pi:${piUid}`;
       } else {
-        // Fallback for demo/sandbox (Simulated)
-        console.warn("No wallet found, simulating connection...");
-        // Generate a random wallet address or use a fixed demo one
-        walletAddress = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
+        walletAddress = `demo:${crypto.randomUUID().slice(0, 8)}`;
       }
 
-      // Authenticate with Backend
+      localStorage.setItem("axiomid_wallet", walletAddress);
+
       const res = await fetch("/api/auth/connect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ walletAddress }),
+        body: JSON.stringify({ walletAddress, piUid, piUsername }),
       });
 
-      if (!res.ok) throw new Error("Failed to authenticate");
+      if (!res.ok) throw new Error("Authentication failed");
 
       const data = await res.json();
       setUser(data.user);
-
-      // Persist locally
-      localStorage.setItem("axiomid_wallet", walletAddress);
-
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Connection failed";
       console.error(err);
-      setError(err.message || "Failed to connect wallet");
+      setError(message);
     } finally {
       setIsConnecting(false);
     }
-  }, []);
+  }, [isPiBrowser]);
 
-  // Claim Action
   const claimAction = useCallback(async (actionType: string) => {
     if (!user) return false;
     try {
@@ -103,14 +95,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       });
 
       if (!res.ok) {
-          const err = await res.json();
-          setError(err.error || "Failed to claim");
-          return false;
+        const err = await res.json();
+        setError(err.error || "Failed to claim");
+        return false;
       }
 
       const data = await res.json();
-      // Update user state with new XP/Tier/Actions
-      // The backend returns { user: updatedUser, earned: xp }
       setUser(data.user);
       return true;
     } catch (err) {
@@ -119,42 +109,40 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  // Refresh User Data
   const refreshUser = useCallback(async () => {
-      if (!user) return;
-      try {
-          const res = await fetch(`/api/user/status?walletAddress=${user.walletAddress}`);
-          if (res.ok) {
-              const data = await res.json();
-              setUser(data.user);
-          }
-      } catch (e) {
-          console.error(e);
+    if (!user) return;
+    try {
+      const res = await fetch(`/api/user/status?walletAddress=${user.walletAddress}`);
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data.user);
       }
+    } catch (e) {
+      console.error(e);
+    }
   }, [user]);
 
-  // Initial Check (Hydration)
   useEffect(() => {
-      const stored = localStorage.getItem("axiomid_wallet");
-      if (stored) {
-          setIsConnecting(true);
-           fetch("/api/auth/connect", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ walletAddress: stored }),
-          })
-          .then(res => res.json())
-          .then(data => {
-              if (data.user) setUser(data.user);
-          })
-          .catch(err => console.error("Reconnection failed:", err))
-          .finally(() => {
-              setIsLoading(false);
-              setIsConnecting(false);
-          });
-      } else {
+    const stored = localStorage.getItem("axiomid_wallet");
+    if (stored) {
+      setIsConnecting(true);
+      fetch("/api/auth/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ walletAddress: stored }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.user) setUser(data.user);
+        })
+        .catch((err) => console.error("Reconnection failed:", err))
+        .finally(() => {
           setIsLoading(false);
-      }
+          setIsConnecting(false);
+        });
+    } else {
+      setIsLoading(false);
+    }
   }, []);
 
   return (
@@ -164,11 +152,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         isLoading,
         isConnecting,
         error,
+        isPiBrowser,
         connectWallet,
         claimAction,
         refreshUser,
         levelProgress,
-        nextXP
+        nextXP,
       }}
     >
       {children}

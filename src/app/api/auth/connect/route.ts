@@ -4,13 +4,12 @@ import { calculateTier } from '@/lib/tiers';
 
 export async function POST(request: Request) {
   try {
-    const { walletAddress } = await request.json();
+    const { walletAddress, piUid, piUsername } = await request.json();
 
     if (!walletAddress) {
       return NextResponse.json({ error: 'Wallet address required' }, { status: 400 });
     }
 
-    // Find or create user
     let user = await prisma.user.findUnique({
       where: { walletAddress },
       include: { actions: true },
@@ -26,15 +25,14 @@ export async function POST(request: Request) {
         include: { actions: true },
       });
     } else {
-        // Recalculate tier just in case
-        const currentTier = calculateTier(user.xp);
-        if (currentTier !== user.tier) {
-            user = await prisma.user.update({
-                where: { walletAddress },
-                data: { tier: currentTier },
-                include: { actions: true },
-            });
-        }
+      const currentTier = calculateTier(user.xp);
+      if (currentTier !== user.tier) {
+        user = await prisma.user.update({
+          where: { walletAddress },
+          data: { tier: currentTier },
+          include: { actions: true },
+        });
+      }
     }
 
     return NextResponse.json({ user });

@@ -141,7 +141,7 @@ function ActionRow({
    MAIN PAGE
    ============================================ */
 export default function Home() {
-  const { user, connectWallet, isConnecting, claimAction, levelProgress, nextXP } = useWallet();
+  const { user, connectWallet, isConnecting, claimAction, levelProgress, nextXP, error, isPiBrowser } = useWallet();
   const [claiming, setClaiming] = useState<string | null>(null);
 
   const handleClaim = async (actionId: string) => {
@@ -161,6 +161,20 @@ export default function Home() {
     <main className="min-h-screen bg-grid flex flex-col items-center p-4 md:p-8 relative">
       <div className="scanline" />
 
+      {/* Sandbox Banner */}
+      {process.env.NEXT_PUBLIC_PI_SANDBOX === "true" && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-4 py-1.5 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-[10px] font-mono tracking-wider">
+          SANDBOX MODE
+        </div>
+      )}
+
+      {/* Error Toast */}
+      {error && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono">
+          {error}
+        </div>
+      )}
+
       {/* Header */}
       <header className="w-full max-w-6xl flex justify-between items-center mb-8 md:mb-12 z-10">
         <div className="flex items-center gap-2">
@@ -170,12 +184,19 @@ export default function Home() {
           <span className="font-mono text-xl tracking-tighter">AXIOM<span className="text-gray-600">ID</span></span>
         </div>
 
-        {user && (
-          <div className="flex items-center gap-4 px-4 py-2 glass-panel rounded-full border border-white/10">
-            <div className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
-            <span className="font-mono text-xs text-neon-green">{user.walletAddress.slice(0,6)}...{user.walletAddress.slice(-4)}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {isPiBrowser && !user && (
+            <span className="text-[10px] font-mono text-electric-blue px-2 py-1 rounded-full border border-electric-blue/30 bg-electric-blue/5">
+              Pi
+            </span>
+          )}
+          {user && (
+            <div className="flex items-center gap-4 px-4 py-2 glass-panel rounded-full border border-white/10">
+              <div className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
+              <span className="font-mono text-xs text-neon-green">{user.walletAddress.startsWith("pi:") ? `pi:${user.walletAddress.slice(3, 9)}` : `${user.walletAddress.slice(0,6)}...${user.walletAddress.slice(-4)}`}</span>
+            </div>
+          )}
+        </div>
       </header>
 
       {/* Main Grid */}
@@ -218,11 +239,11 @@ export default function Home() {
                     >
                         {isConnecting ? (
                             <>
-                                <span className="animate-spin">⟳</span> INITIALIZING...
+                                <span className="animate-spin">⟳</span> AUTHENTICATING...
                             </>
                         ) : (
                             <>
-                                <Icons.Wallet /> INITIALIZE SEQUENCE
+                                <Icons.Wallet /> {isPiBrowser ? "CONNECT PI" : "CONNECT WALLET"}
                             </>
                         )}
                     </button>

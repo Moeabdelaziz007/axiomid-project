@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getClientIp } from "../../../lib/ip.ts";
+import { getClientIp } from "../../../lib/ip";
 
 test("getClientIp - prioritizes request.ip", () => {
     const req = {

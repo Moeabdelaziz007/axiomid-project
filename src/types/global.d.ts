@@ -1,12 +1,56 @@
 export {};
 
+interface PiUser {
+  uid: string;
+  username: string;
+}
+
+interface PiAuthResult {
+  accessToken: string;
+  user: PiUser;
+}
+
+interface PiPaymentDTO {
+  identifier: string;
+  user_uid: string;
+  amount: number;
+  memo: string;
+  metadata: Record<string, unknown>;
+  from_address: string;
+  to_address: string;
+  direction: "user_to_app" | "app_to_user";
+  created_at: string;
+  network: string;
+  status: string;
+  transaction: { txid: string; verified: boolean; _link: string } | null;
+}
+
+interface PiPaymentCallbacks {
+  onReadyForServerApproval: (paymentId: string) => void;
+  onReadyForServerCompletion: (paymentId: string, txid: string) => void;
+  onCancel: (paymentId: string) => void;
+  onError: (error: Error, payment?: PiPaymentDTO) => void;
+}
+
+interface PiInstance {
+  init: (params: { version: string; sandbox?: boolean }) => void;
+  authenticate: (
+    scopes: string[],
+    onIncompletePayment: (payment: PiPaymentDTO) => void
+  ) => Promise<PiAuthResult>;
+  createPayment: (
+    paymentData: {
+      amount: number;
+      memo: string;
+      metadata?: Record<string, unknown>;
+    },
+    callbacks: PiPaymentCallbacks
+  ) => Promise<PiPaymentDTO>;
+}
+
 declare global {
   interface Window {
     webkitAudioContext: typeof AudioContext;
-    ethereum?: {
-      request: (args: { method: string; params?: any[] }) => Promise<any>;
-      on: (event: string, handler: (...args: any[]) => void) => void;
-      removeListener: (event: string, handler: (...args: any[]) => void) => void;
-    };
+    Pi?: PiInstance;
   }
 }
