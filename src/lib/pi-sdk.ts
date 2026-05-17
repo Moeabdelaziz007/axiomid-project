@@ -19,7 +19,10 @@ export function ensurePiSdk(): Promise<void> {
     return Promise.resolve();
   }
   if (!piSdkLoadPromise) {
-    piSdkLoadPromise = injectPiSdkScript();
+    piSdkLoadPromise = injectPiSdkScript().catch((err) => {
+      piSdkLoadPromise = null; // allow retry on next call
+      throw err;
+    });
   }
   return piSdkLoadPromise;
 }
