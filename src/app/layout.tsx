@@ -101,6 +101,7 @@ export default function RootLayout({
       <head>
         <link rel="apple-touch-icon" sizes="192x192" href="/icon-192x192.png" />
         <link rel="apple-touch-icon" sizes="512x512" href="/icon-512x512.png" />
+        <script src="https://sdk.minepi.com/pi-sdk.js" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-oled text-white min-h-screen overflow-x-hidden`}
