@@ -97,28 +97,37 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       let accessToken = "";
 
       const inPiBrowser = detectPiBrowser();
-      const hasPiSdk = typeof window !== "undefined" && !!window.Pi;
+      let piSdk = typeof window !== "undefined" ? window.Pi : undefined;
       debug("detectPiBrowser", inPiBrowser);
-      debug("hasPiSdk", hasPiSdk);
+      debug("hasPiSdk", !!piSdk);
 
-      if (inPiBrowser || hasPiSdk) {
-        if (!hasPiSdk) {
-          debug("ensuring Pi SDK...");
-          await withTimeout(ensurePiSdk(), AUTH_TIMEOUT_MS);
-          debug("Pi SDK available", !!window.Pi);
-          if (!window.Pi) throw new Error("Pi SDK not available");
+      if (inPiBrowser) {
+        debug("ensuring Pi SDK...");
+        await withTimeout(ensurePiSdk(), AUTH_TIMEOUT_MS);
+        piSdk = typeof window !== "undefined" ? window.Pi : undefined;
+        debug("Pi SDK available", !!piSdk);
+        if (!piSdk) throw new Error("Pi SDK not available");
+      } else if (!piSdk) {
+        debug("waiting for sandbox Pi SDK injection...");
+        for (let i = 0; i < 30; i++) {
+          await new Promise((r) => setTimeout(r, 300));
+          piSdk = typeof window !== "undefined" ? window.Pi : undefined;
+          if (piSdk) break;
         }
+        debug("sandbox Pi SDK resolved", !!piSdk);
+        if (!piSdk) throw new Error("Pi SDK not injected by sandbox");
+      }
 
-        debug("calling Pi.init...");
-        await withTimeout(
-          window.Pi!.init({ version: "2.0", sandbox: SANDBOX }),
-          AUTH_TIMEOUT_MS
-        );
-        debug("Pi.init done");
+      debug("calling Pi.init...");
+      await withTimeout(
+        piSdk.init({ version: "2.0", sandbox: SANDBOX }),
+        AUTH_TIMEOUT_MS
+      );
+      debug("Pi.init done");
 
         debug("calling Pi.authenticate...");
         const auth = await withTimeout(
-          window.Pi!.authenticate(
+          piSdk.authenticate(
             ["username"],
             (payment) => {
               console.warn("Incomplete payment:", payment);
@@ -170,14 +179,30 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     if (authAttempted.current) return;
     authAttempted.current = true;
 
-    if (detectPiBrowser()) {
-      connectWallet();
-    } else if (typeof window !== "undefined" && window.Pi) {
-      console.log("[AUTH DEBUG] Pi SDK injected by sandbox — auto-initializing");
-      window.Pi!.init({ version: "2.0", sandbox: SANDBOX }).catch((e: Error) => {
+    const initSandboxPi = (pi: PiInstance) => {
+      console.log("[AUTH DEBUG] Pi SDK detected, calling Pi.init...");
+      pi.init({ version: "2.0", sandbox: SANDBOX }).catch((e: Error) => {
         console.log("[AUTH DEBUG] Pi.init auto failed", e.message);
       });
+    };
+
+    if (detectPiBrowser()) {
+      connectWallet();
     } else {
+      const pi = typeof window !== "undefined" ? window.Pi : undefined;
+      if (pi) {
+        initSandboxPi(pi);
+      } else {
+        const piCheckInterval = setInterval(() => {
+          const p = typeof window !== "undefined" ? window.Pi : undefined;
+          if (p) {
+            clearInterval(piCheckInterval);
+            initSandboxPi(p);
+          }
+        }, 300);
+        setTimeout(() => clearInterval(piCheckInterval), 15000);
+      }
+
       const stored = localStorage.getItem("axiomid_wallet");
       if (stored) {
         fetch("/api/auth/connect", {
